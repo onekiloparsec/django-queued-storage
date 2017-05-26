@@ -1,3 +1,4 @@
+import os
 import six
 
 from django.core.cache import cache
@@ -236,6 +237,15 @@ class QueuedStorage(object):
         if remote_available_name > local_available_name:
             return remote_available_name
         return local_available_name
+
+    def generate_filename(self, filename):
+        """
+        Validate the filename by calling get_valid_name() and return a filename
+        to be passed to the save() method.
+        """
+        # `filename` may include a path as returned by FileField.upload_to.
+        dirname, filename = os.path.split(filename)
+        return os.path.normpath(os.path.join(dirname, self.get_valid_name(filename)))
 
     def path(self, name):
         """
