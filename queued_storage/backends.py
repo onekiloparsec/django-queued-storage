@@ -166,7 +166,7 @@ class QueuedStorage(object):
         """
         return self.get_storage(name).open(name, mode)
 
-    def save(self, name, content):
+    def save(self, name, content, max_length=None):
         """
         Saves the given content with the given name using the local
         storage. If the :attr:`~queued_storage.backends.QueuedStorage.delayed`
@@ -178,6 +178,9 @@ class QueuedStorage(object):
         :type name: str
         :param content: content of the file specified by name
         :type content: :class:`~django:django.core.files.File`
+        :param max_length: The length of the filename will not exceed
+            `max_length`, if provided.
+        :type max_length: int
         :rtype: str
         """
         cache_key = self.get_cache_key(name)
@@ -185,7 +188,7 @@ class QueuedStorage(object):
 
         # Use a name that is available on both the local and remote storage
         # systems and save locally.
-        name = self.get_available_name(name)
+        name = self.get_available_name(name, max_length)
         name = self.local.save(name, content)
 
         # Pass on the cache key to prevent duplicate cache key creation,
@@ -222,7 +225,7 @@ class QueuedStorage(object):
         """
         return self.get_storage(name).get_valid_name(name)
 
-    def get_available_name(self, name):
+    def get_available_name(self, name, max_length=None):
         """
         Returns a filename that's free on both the local and remote storage
         systems, and available for new content to be written to.
@@ -231,8 +234,8 @@ class QueuedStorage(object):
         :type name: str
         :rtype: str
         """
-        local_available_name = self.local.get_available_name(name)
-        remote_available_name = self.remote.get_available_name(name)
+        local_available_name = self.local.get_available_name(name, max_length=max_length)
+        remote_available_name = self.remote.get_available_name(name, max_length=max_length)
 
         if remote_available_name > local_available_name:
             return remote_available_name
