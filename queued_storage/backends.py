@@ -1,6 +1,7 @@
 import os
 import six
 
+from django import VERSION
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.functional import SimpleLazyObject
@@ -9,7 +10,7 @@ from django.utils.http import urlquote
 from .conf import settings
 from .utils import import_attribute, django_version
 
-if django_version()[1] >= 7:
+if VERSION[1] >= 7:
     from django.utils.deconstruct import deconstructible
 
 
@@ -234,8 +235,8 @@ class QueuedStorage(object):
         :type name: str
         :rtype: str
         """
-        local_available_name = self.local.get_available_name(name, max_length=max_length)
-        remote_available_name = self.remote.get_available_name(name, max_length=max_length)
+        local_available_name = self.local.get_available_name(name)
+        remote_available_name = self.remote.get_available_name(name)
 
         if remote_available_name > local_available_name:
             return remote_available_name
@@ -326,6 +327,17 @@ class QueuedStorage(object):
         """
         return self.get_storage(name).accessed_time(name)
 
+    def get_accessed_time(self, name):
+        """
+        Returns the last accessed time (as datetime object) of the file
+        specified by name.
+
+        :param name: file name
+        :type name: str
+        :rtype: :class:`~python:datetime.datetime`
+        """
+        return self.accessed_time(name)
+
     def created_time(self, name):
         """
         Returns the creation time (as datetime object) of the file
@@ -335,7 +347,21 @@ class QueuedStorage(object):
         :type name: str
         :rtype: :class:`~python:datetime.datetime`
         """
-        return self.get_storage(name).created_time(name)
+        if VERSION[1] >= 10:
+            return self.get_storage(name).get_created_time(name)
+        else:
+            return self.get_storage(name).created_time(name)
+
+    def get_created_time(self, name):
+        """
+        Returns the creation time (as datetime object) of the file
+        specified by name.
+
+        :param name: file name
+        :type name: str
+        :rtype: :class:`~python:datetime.datetime`
+        """
+        return self.created_time(name)
 
     def modified_time(self, name):
         """
@@ -346,7 +372,22 @@ class QueuedStorage(object):
         :type name: str
         :rtype: :class:`~python:datetime.datetime`
         """
-        return self.get_storage(name).modified_time(name)
+        if VERSION[1] >= 10:
+            return self.get_storage(name).get_modified_time(name)
+        else:
+            return self.get_storage(name).modified_time(name)
+
+    def get_modified_time(self, name):
+        """
+        Returns the last modified time (as datetime object) of the file
+        specified by name.
+
+        :param name: file name
+        :type name: str
+        :rtype: :class:`~python:datetime.datetime`
+        """
+        return self.modified_time(name)
+
 if django_version()[1] >= 7:
     QueuedStorage = deconstructible(QueuedStorage)
 
